@@ -1,0 +1,19 @@
+Mar 28 16:30:01 labpc01 CRON[8900]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Mar 28 16:35:12 labpc01 sshd[9001]: Accepted publickey for student7 from 192.168.1.45 port 52100 ssh2
+Mar 28 16:35:12 labpc01 sshd[9001]: pam_unix(sshd:session): session opened for user student7(uid=1007) by (uid=0)
+Mar 28 16:38:40 labpc01 sudo: student7 : TTY=pts/2 ; PWD=/home/student7 ; USER=root ; COMMAND=/usr/bin/apt install gcc
+Mar 28 16:38:40 labpc01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by student7(uid=1007)
+Mar 28 16:42:18 labpc01 sudo: student7: command not allowed ; TTY=pts/2 ; PWD=/tmp ; USER=root ; COMMAND=/usr/bin/vim /etc/sudoers
+Mar 28 16:42:55 labpc01 su[9102]: FAILED su for root by student7
+Mar 28 16:42:58 labpc01 su[9103]: FAILED su for root by student7
+Mar 28 16:43:10 labpc01 audit[9200]: EXECVE argc=3 a0="/usr/bin/gcc" a1="-fno-stack-protector" a2="-z" a3="execstack" a4="-o" a5="/tmp/.helper" a6="/tmp/helper.c"
+Mar 28 16:43:15 labpc01 audit[9205]: EXECVE argc=2 a0="/usr/bin/chmod" a1="+x" a2="/tmp/.helper"
+Mar 28 16:43:30 labpc01 kernel: .helper[9210]: segfault at 41414141 ip 41414141 sp bffff380 error 14 in .helper[8048000+1000]
+Mar 28 16:43:45 labpc01 kernel: .helper[9215]: segfault at bffff350 ip bffff375 sp bffff380 error 14 in .helper[8048000+1000]
+Mar 28 16:43:52 labpc01 kernel: .helper[9218]: segfault at bffff360 ip bffff385 sp bffff380 error 14 in .helper[8048000+1000]
+Mar 28 16:44:01 labpc01 audit[9220]: USER_CMD pid=9220 uid=1007 auid=1007 msg='cwd="/tmp" cmd="/tmp/.helper $(python3 -c print(...))" terminal=pts/2 res=success'
+Mar 28 16:44:02 labpc01 audit[9220]: type=1400 apparmor="ALLOWED" operation="open" name="/etc/sudoers" pid=9220 comm=".helper"
+Mar 28 16:44:10 labpc01 sudo: student7 : TTY=pts/2 ; PWD=/tmp ; USER=root ; COMMAND=/bin/bash
+Mar 28 16:44:10 labpc01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by student7(uid=1007)
+Mar 28 16:46:00 labpc01 sudo: student7 : TTY=pts/2 ; PWD=/tmp ; USER=root ; COMMAND=/usr/bin/apt install nmap netcat
+Mar 28 16:50:22 labpc01 sshd[9001]: pam_unix(sshd:session): session closed for user student7

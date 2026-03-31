@@ -1,0 +1,60 @@
+========================================
+  FILE INTEGRITY CHECK REPORT
+  Host: labpc01.university.local
+  Baseline: 2026-03-27 23:00:00 UTC
+  Scan:     2026-03-29 06:00:00 UTC
+  Tool:     AIDE v0.18.6
+========================================
+
+--- Summary ---
+  Files checked:    142,387
+  Files changed:    3
+  Files added:      2
+  Files removed:    1
+
+--- Changed Files ---
+
+CHANGED: /etc/sudoers
+  Permissions: -r--r----- (unchanged)
+  Owner:       root:root (unchanged)
+  Size:        old=823  new=862
+  SHA256 old:  a4f2c891d3e...
+  SHA256 new:  7b1e3f094ac...
+  Diff:
+    --- /etc/sudoers.baseline   2026-03-27 23:00:00
+    +++ /etc/sudoers.current    2026-03-28 16:44:02
+    @@ -27,3 +27,4 @@
+     %admin ALL=(ALL) ALL
+     %sudo  ALL=(ALL:ALL) ALL
+    +student7 ALL=(ALL) NOPASSWD: ALL
+
+CHANGED: /var/log/auth.log
+  (Expected - log file grows normally)
+
+CHANGED: /var/log/syslog
+  (Expected - log file grows normally)
+
+--- Added Files ---
+
+ADDED: /home/student7/.bash_history
+  Permissions: -rw------- 
+  Owner:       student7:student7
+  Size:        0
+  Note:        File exists but is empty (history was cleared)
+
+ADDED: /var/tmp/.nmap_cache
+  Permissions: -rwxr-xr-x
+  Owner:       root:root
+  Size:        41,208
+  SHA256:      c3d9102ee7a...
+  Note:        Suspicious binary in /var/tmp
+
+--- Removed Files ---
+
+REMOVED: /tmp/.helper
+  (Was present during previous ad-hoc scan at 16:45; 
+   now deleted. Binary was not in baseline.)
+
+========================================
+  END OF REPORT
+========================================
