@@ -1,0 +1,92 @@
+Tutorial 9 - Evading Stack Protection
+
+Do not hesitate to try to finish the previous practical session when you finish the exercices.
+
+----------------------------------
+9.1 Environment Configuration (repeated from last week)
+----------------------------------
+
+This is the same at last week, but repeated so you don't forget.
+
+On most Linux systems and with most compilers there are protections built in to prevent various exploits. For today's tutorial we may have to turn some of these off (and back on again later).
+
+One is the randomisation of memory segments by the Linux kernel. We can see the current value with
+  sudo cat /proc/sys/kernel/randomize_va_space
+This is "2" by default on Kali Linux (and most Linux systems). To turn this off for the rest of the sessions by setting the value to "0" we can run
+  echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+Afterwards, confirm we have turned off memory segment randomisation with
+  sudo cat /proc/sys/kernel/randomize_va_space
+
+Note that this will be changed later in the tutorial at different times.
+
+
+----------------------------------
+9.2 Evading Stack Protection (adapted/similar to lecture)
+----------------------------------
+
+In "vuln.c" is a program that has a vulnerability even when compiled with stack protection. This file can be built with:
+  gcc -z execstack -o vuln vuln.c
+optionally you can also include debugging information with "-g".
+
+NOTE: we do compile with stack protection! The goal of this part of the tutorial is for you to exploit code with stack protection enabled!
+
+We can run this program with:
+  ./vuln AAAA BBBB
+and see that we are shown some memory addresses (these are included to help you).
+
+By examining the code we can see that there is an instance of strcpy that we can probably exploit.
+
+The goal is to provide command line arguments that allow you to execute a shellcode (of your choice, but a simple /bin/sh one is fine including taking one from an earlier tutorial).
+
+HINT: Use the first strcpy to overflow and change the value of where "p" points to.
+
+
+----------------------------------
+9.3 Breaking ASLR
+----------------------------------
+
+For this section of the tutorial we will tunr address randomisation back on:
+  echo 2 | sudo tee /proc/sys/kernel/randomize_va_space
+and we can confirm it is on with
+  sudo cat /proc/sys/kernel/randomize_va_space
+and observing the value "2".
+
+
+In "ret2text.c" you will find a program that that should be exploitable even with stack protection. You can build the program with:
+  gcc -o ret2text ret2text.c
+and include debugging if you want.
+
+You should now be able to cause an overflow that allows you to jump into the secret function.
+
+HINT: This was used as an example in the lecture with brief discussion of how to perform the exploit.
+
+In "vulnerable.c" you will find a program that we injected shell code into when ASLR was disabled. Can you inject a shellcode into it with ASLR enable?
+
+HINT: Some solutions were presented in the lectures, or feel free to instrument the code and learn about the behaviour on your system before exploiting it.
+
+-----------------------
+9.4 Evaluating Defenses
+-----------------------
+
+Compile vulnerable.c four different ways and test each with ASLR on and off. Fill in the results table and answer the reflection questions.
+
+Build      Compile command   
+A          gcc -fno-stack-protector -z execstack -o vuln_A vulnerable.c
+B          gcc -fstack-protector -z execstack -o vuln_B vulnerable.c
+C          gcc -fno-stack-protector -z noexecstack -o vuln_C vulnerable.c
+D          gcc -fstack-protector -z noexecstack -o vuln_D vulnerable.c
+           
+Toggle ASLR between tests:
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space   # OFF
+echo 2 | sudo tee /proc/sys/kernel/randomize_va_space   # ON
+
+
+For each of the 8 combinations (4 builds × ASLR on/off), try: (a) a simple overflow with "A"x200, (b) the full shellcode injection from previous practical session. 
+Record what happens: clean crash, *** stack smashing detected ***, Segmentation fault, Illegal instruction, or shell spawned.
+Overflow detected? Shellcode runs? Addr. stable? 
+
+Reflection Questions
+a) Which single protection is most effective on its own against this specific attack? Justify your choice.
+b) An attacker uses Return-Oriented Programming (ROP) instead of injecting shellcode. Which protections in the table above become useless against ROP? Which remain effective? (You may need to look up ROP briefly.)
+c) A colleague argues: "We have ASLR on, so we don't need stack canaries or NX." Explain what is wrong in its reasoning.
+
