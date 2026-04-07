@@ -53,14 +53,16 @@ and observing the value "2".
 
 
 In "ret2text.c" you will find a program that that should be exploitable even with stack protection. You can build the program with:
-  gcc -o ret2text ret2text.c
+  gcc -o ret2text ret2text.c --no-pie
 and include debugging if you want.
+(PIE (Position Independant Execution) make it so ASLR also applies to .text. By disabling PIE for this exercise function addresses will remain constant.)
 
 You should now be able to cause an overflow that allows you to jump into the secret function.
 
 HINT: This was used as an example in the lecture with brief discussion of how to perform the exploit.
 
 In "vulnerable.c" you will find a program that we injected shell code into when ASLR was disabled. Can you inject a shellcode into it with ASLR enable?
+  gcc -g -fno-stack-protector -z execstack -o vulnerable vulnerable.c
 
 HINT: Some solutions were presented in the lectures, or feel free to instrument the code and learn about the behaviour on your system before exploiting it.
 
