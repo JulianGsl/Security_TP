@@ -39,8 +39,15 @@ By examining the code we can see that there is an instance of strcpy that we can
 The goal is to provide command line arguments that allow you to execute a shellcode (of your choice, but a simple /bin/sh one is fine including taking one from an earlier tutorial).
 
 HINT: Use the first strcpy to overflow and change the value of where "p" points to.
+- Le but est de contourner le canari sans même y toucher.
+- La mémoire dans notre fonction f est organiser comme tel : un tableau de 30 octets a[30], un pointeur p (4 octets), le canari, l'adresse de retour (ce que l'on souhaite changer)
+- On utilise le strcopy pour remplir le tableau "a" de 30 octets et on déborde de 4 octets pour écraser la valeur de p (qui pointe initialement vers a), On peut décider de pointer où on le souhaite.
+- Puisque nous avons modifié "p", le programme va écrire la valeur de argv[2] à l'adresse que l'on a choisi à l'étape précédente.
 
-
+- Comment le faire en pratique ? : (1) On Attrape l'adresse de toutes les variable utiles. Ici on a "a" : 0xbffff25e     "p" : 0xbffff27c      "EIP" : 0xbffff28c
+(2) Calcul de l'offset : 0xbffff27c - 0xbffff25e = 0x1e ce qui correspond à exactement 30 octets ce qui nous confirme que le pointeur "p" se trouve bien juste après "a"
+(3) L'attaque en elle même. Le premier argument va servir a détourner le pointeur. On rempli les 30 octets de "a" avec le shellcode (taille de 23 octets) complété par 7 octets de NOP (\x90) pour atteindre les 30 octets. On fini par les 4 octets servant à écraser "p". On met : \x8c\xf2\xcd\80 ce qui correspond à l'adresse de l'EIP écrit à l'envers. Le second argument donne l'adresse où commence notre shellcode (en gros on écrit l'adresse de à à l'envers).
+ 
 ----------------------------------
 9.3 Breaking ASLR
 ----------------------------------
@@ -60,11 +67,18 @@ and include debugging if you want.
 You should now be able to cause an overflow that allows you to jump into the secret function.
 
 HINT: This was used as an example in the lecture with brief discussion of how to perform the exploit.
+- Le début : trouver l'adresse de la fonction secret. Ici on fait nm ret2text | grep secret     Cela nous a permis d'obtenir : 000011e4 T secret
+- Calcul de l'offset : Dans la fonction public, il y a un buffer de 12 octets, pour atteindre l'EIP il va falloir remplir le buffer (12 octets), le savec EBP (4 octets). Il faut donc remplir 16 octets avec de pouvoir remplir la cible.
+- L'attaque : On écrit l'équivalent de 16 octets (Exemple : AAAAAAAAAAAAAAAA) suivi  de l'adresse de la fonction secret écrit à l'envers. Celà va changer la valeur de l'EIP pour nous renvoyer sur le secret.
+
 
 In "vulnerable.c" you will find a program that we injected shell code into when ASLR was disabled. Can you inject a shellcode into it with ASLR enable?
   gcc -g -fno-stack-protector -z execstack -o vulnerable vulnerable.c
 
 HINT: Some solutions were presented in the lectures, or feel free to instrument the code and learn about the behaviour on your system before exploiting it.
+- La différence par rapport à l'attaque précédente est que cette fois au lieu de sauter directement sur une fonction fixe, on veut aller sur la stack qui change de place mémoire à chaque execution.
+- Ici on est plus sur une question de certitude, on ne peut plus avoir de certitude que ça va réussir à chaque fois. Cependant pour augmenter notre chance, ce que l'on peut faire c'est ajouter un maximum de NOP avant notre shellcode. Si par chance on tape sur un des NOP, on va executer notre shellcode. Dans le cas contraire, on va surement faire un segmentation fault.
+
 
 -----------------------
 9.4 Evaluating Defenses
@@ -85,10 +99,21 @@ echo 2 | sudo tee /proc/sys/kernel/randomize_va_space   # ON
 
 For each of the 8 combinations (4 builds × ASLR on/off), try: (a) a simple overflow with "A"x200, (b) the full shellcode injection from previous practical session. 
 Record what happens: clean crash, *** stack smashing detected ***, Segmentation fault, Illegal instruction, or shell spawned.
-Overflow detected? Shellcode runs? Addr. stable? 
+Overflow detected? Shellcode runs? Addr. stable?
+- Build A - 0 : (a) Segmentation fault (b) En théorie ça devrait passer sans erreur 
+- Build A - 2 : (a) Segmentation fault (b) Ne peut pas connaitre l'adresse donc segmentation fault
+- Build B - 0 : (a) stack smashing detected - terminated, abordted (b) Stack smashing detected 
+- Build B - 2 : (a) stack smashing detected - terminated, abordted (b) Ne peut pas connaitre l'adresse donc stack smashing detected
+- Build C - 0 : (a) Segmentation fault (b) segmentation fault / Illegal instruction
+- Build C - 2 : (a) Segmentation fault (b) Ne peut pas connaitre l'adresse donc segmentation fault
+- Build D - 0 : (a) stack smashing detected - terminated, abordted (b) Stack smashing detected
+- Build D - 2 : (a) stack smashing detected - terminated, abordted (b) Ne peut pas connaitre l'adresse donc stack smashing detected
+ 
 
 Reflection Questions
 a) Which single protection is most effective on its own against this specific attack? Justify your choice.
+- La protection de NX (No-Execute) car même si l'attaquant réussi à modifier l'EIP vers son code, le processeur refusera d'executer des instructions situé sur la stack. 
 b) An attacker uses Return-Oriented Programming (ROP) instead of injecting shellcode. Which protections in the table above become useless against ROP? Which remain effective? (You may need to look up ROP briefly.)
+- Dans ce cas le NX devient complètement useless. Les stack canari et ASLR (avec PIE) reste efficace contre ces attaques
 c) A colleague argues: "We have ASLR on, so we don't need stack canaries or NX." Explain what is wrong in its reasoning.
-
+- L'ASLR est probabilistique, l'espace d'adressage n'est pas assez grand et ne protège pas vraiment contre du brute force. De plus, si l'attaquant arrive à accéder à une adresse mémoire, l'ASLR devient complètement inutile. Finalement, il faut savoir que toutes les protections sont complémentaire. L'ASLR empêche de savoir et sauter, le canari empêche de modifier le saut, le NX empêche d'executer du code après le saut, ...

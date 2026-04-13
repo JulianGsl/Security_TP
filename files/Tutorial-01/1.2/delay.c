@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
   char *sleep ="/bin/sleep";
   char *command = malloc(strlen(sleep) + strlen(argv[1]) +2);
   sprintf(command, "%s %s", sleep, argv[1]);
-  system(command);
+  // system(command);
   return 0;
 }
 

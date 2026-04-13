@@ -40,9 +40,13 @@ Now let's see what we can observe from the behaviour by trying passwords of diff
 
 You should be able to provoke four different behaviours from this code:
 1. "access granted" with the password "good"
+-¨ Donne directement accès a good
 2. "bad password!" with the wrong password
+- Donner un mot de passe mauvais
 3. both "bad password!" and "access granted"
+- Donner un mot de passe qui dépasse qui fait les 16 bytes du buffer + des caractères (exemple : AAAAAAAAAAAAAAAA1"
 4. "bad password!" followed by a segmentation fault.
+- Donner un mot de passe vraiment super long qui dépasse la mémoire de toutes les variables
 
 
 ----------------------------------
@@ -58,13 +62,15 @@ this tells gcc to include stack protection mechanisms in the code.
 Now if we run the same experiments as before we expect the code to report that "stack smashing" is detected and this should prevent both access granted after a bad password, and segmentation faults.
 
 ËXERCISE: Inspect the two different versions of the code with gdb and see if you can find where and how the stack protection is implemented. Do you know which kind of stack protection this implementation is?
+- ou c'est implémenté ? Les protection sont implémenté au début de la mémoire utilisé par la fonction et a la fin également.
+- Quel est le type de protection ? Il s'agit d'un stack canary. 
 
 Next the code in "reordered.c" makes minor changes to the order of the declared variables in the "check_authentification" function.
 This code may or may not also have the same vulnerability, test on your system and with your compiler(s) to see what happens.
 Note that you may experience different results with different compilers, try:
-  gcc
-  clang 
-  g++
+  gcc (laisse l'erreur)
+  clang (créer une segmentation fault)
+  g++ (laisse l'erreur)
 Typically you can find what compilers (and compiler modules) are available with
   dpkg --list | grep compiler
 The VM only has the three above for now, but you can look on other systems.
@@ -85,6 +91,7 @@ WARNING: Results here can be compiler dependent.
 Run the code with
   ./simple-loop test
 and then experiment with the argument to create the infinite loop. When this has succeeded, use gdb to explore how this happens.
+- On fait une chaine de caractère de 16 valeurs. On a donc un string de 17 valeurs car fini toujours par /0. Le /0 va écraser la valeur du i et donc i = 0 pour tout le temps. Donc boucle infinite.
 
 HELP: The following command should create an infinite loop:
   ./simple-loop 0123456789abcdef
@@ -93,6 +100,7 @@ if this does not, then you may can check with gdb to find out why (or why it is 
 CHEAT: (Read me if you cannot create an infinite loop!) The reason for the infinite loop is due to the null termination character from the input string being able to over-write the loop counter. This may not work, e.g. if the compiler re-orders the arguments. If this did not work for you, have a look and see what the compiler did to prevent it happening.
 
 EXERCISE: Does clang also allow an infinite loop? Can you fix the code so this doesn't happen?
+- Dans mon cas, clang a aussi laissé le cas de la boucle infini. Une façon de fixer le problème est de change la boucle. En changeant la condion de "i inférieur ou égale à 16" en "i inférieur à 16"
 
 
 ----------------------------------
@@ -111,7 +119,7 @@ when inside the foo function to see values around the "newbuffer" as allocated o
 By comparing these with the known return point in the main function and the value of EBP you should be able to find what you're looking for.
 
 HINT: You can change the value of TARGET and write other information into (or around) "buffer" in the "main" function.
-
+- Il faut faire gdb ./loop ensuite vérifier les adresse de la fonction foo, la premiere adresse est celle de la fonction, on la réécris manuellement dans le code et on chope une fonction infini ou la ligne de mémoire ne fait qu'appeler la fonction qui se rappelle elle même
 
 ----------------------------------
 4.6 Spawning a Shell

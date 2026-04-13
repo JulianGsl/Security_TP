@@ -158,4 +158,18 @@ against your opponents on the (in)famous Rainbow Road. Have a look at the source
 to find a way to get your prize ! For this question, the objective is to find how to make a call to the function
 getYourPrize() without any modification of the source code.
 
+REPONSE : 
+- Le problème est dans l'objet car au moment de faire un newcar(), on utilise malloc(). Contrairement à calloc(), malloc() ne reset pas la mémoire lorsqu'on alloue un espace de mémoire.
+- Le but est de manipuller la mémoire (le heap) pour insérer "WIN"
+- le champ title de la voiture se trouve juste après name (qui prend 12 octets) donc le titre occupe les octets 12, 13, 14, 15 de la structure
+- Si on se concentre sur la structure circuit, le malloc de name prend également 16 octets (parfaitement les 12 octets + 4 octets du title)
+- DONC le but est de donné un circuit très précis. Le free et ensuite réutiliser l'espace mémoire avec car (name et title). De tel façon que name du circuit = name de car = "WIN" (pour le title)
+- ETAPE A Suivre : (4) Create a circuit, donner une difficulté, donné un nom de 15 caractère qui finit par "WIN" (EX : 123456789012WIN).
+-		   (6) Remove le circuit
+		   (1) Buy a new car, donner un nom par trop long (pas dépasser les 12 charactère)
+		   (2) Get your prize, avec les modifications on a d'office gagné.
+
+
+
+
 

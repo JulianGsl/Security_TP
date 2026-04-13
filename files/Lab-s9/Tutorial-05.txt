@@ -36,9 +36,10 @@ To produce the exploitable code here compile with:
   clang -g -o exploitme exploitme.c
 
 Now we can run the code and explore in gdb to find what can be changed. You should be able to see a change to the stack where the value of EBP is stored.
-
+- On écrit sur la valeur de l'EBP 
 BONUS: Can you find a way to exploit this?
-
+- La boucle écrits 257 octets sur un buffer de 256, ce qui fait qu'on peut toucher au dernier octet de la valeur de l'EBP.
+- Exploitation : En gros, on peut écraser la valeur de l'EBP pour faire n'importe quoi.
 The code in "vulnerable.c" allows you to overflow the buffer much more generously. Here you should be able to manipulate the stack (in particular EBP) to alter the state of the program after the return in a more complex way.
 Observe that the program prints the length of the argument. You should be able to overflow and overwrite the EBP so that it points somewhere else. Then in your argument that overflows, create a fake stack frame so that the rest of the main function prints an incorrect value (hiding that your argument was long enough to overflow by over-writing the value stored from "strlen").
 
@@ -51,15 +52,20 @@ You are given a raw binary file shellcode.bin. Your task is purely analytical: d
 
     1. Disassemble. Run: objdump -D -b binary -m i386 shellcode.bin to get an initial disassembly. 
        Some instructions could be unusual, run xxd on the shellcode.bin. What do you observe? Why?
+	- On observe très clairement le /bin/sh en fin de fichier. Le shellcode est un programme autonome qui doit intégré ses propres données pour fonctionner sans bibliothèques externe.
     
     2. Syscall identification. The shellcode uses int 0x80 (Linux x86 syscall). Every time you see this instruction, identify which syscall is invoked by looking at the value in eax. Use the Linux syscall table for 32-bit x86. What are the arguments in ebx, ecx, edx?
-    
-    3. String extraction. The shellcode contains an embedded string. Find the call/pop trick that loads its address. What program does this shellcode launch? At which exact byte offset does code end and data begin?
-    
-    4. Null-byte analysis. Go through every byte of the shellcode. Does it contain any null bytes (\x00)? Explain precisely why null bytes are problematic. Then find one instruction in the shellcode that appears designed specifically to avoid producing a null byte and explain what a naïve version of that instruction would be and why it would contain a null.
-    
-    5. Classification. Classify this shellcode: local shell, reverse shell, bind shell, or other?
+	- On observe les valeurs 0x46 (70) et 0X0b (11) dans le registre eax juste avant les instructions "int $0x80" car celà définit les appels système setreuid (pour devenir root) et execve (pour lancher le shell).     
 
+    3. String extraction. The shellcode contains an embedded string. Find the call/pop trick that loads its address. What program does this shellcode launch? At which exact byte offset does code end and data begin?
+	- On observe une boucle jmp/call/pop car c'est une technique pour changer l'adresse de la chaine /bin/sh (qui commence à l'offset 0x27 dans le registre %eab afin de l'utiliser comme un argument du syscall 
+
+    4. Null-byte analysis. Go through every byte of the shellcode. Does it contain any null bytes (\x00)? Explain precisely why null bytes are problematic. Then find one instruction in the shellcode that appears designed specifically to avoid producing a null byte and explain what a naïve version of that instruction would be and why it would contain a null.
+	- On observe aucun octet nul (\x00) dans le code machine du shell. Pourquoi ? Parce qu'il sont problématiques. Il agissent comme des octets de fin de chaine de caractères pour des fonctions tel que strcpy, ce qui stoperait la copie de l'exploit de mémoire.
+	- En instrution spécifique on observe xor, %eax, %eax au lieu de faire mov $0 %eax. Car la version naive mov $0 %eax contiendrait des octets 0 ce que l'on veut pas.    
+
+    5. Classification. Classify this shellcode: local shell, reverse shell, bind shell, or other?
+	- C'est un local shell. Pourquoi ? on l'appelle ainsi car il n'y a aucune instruciton réseau et se contente de lancer un terminal /bin/sh directement sur la machine sur lequel il est executé.
 
 ----------------
 5.3 Log analysis
@@ -68,9 +74,22 @@ You are given a raw binary file shellcode.bin. Your task is purely analytical: d
 You are auditing a university computer lab after a student reported that sudo was behaving unexpectedly. You have been given three files: auth_labpc01.log, bash_history_student7.txt, and integrity_report_labpc01.txt. Read all three before answering.
 
     1. Failed attempt fingerprint. The first segfault (PID 9210) shows ip 41414141. Explain what this reveals about the attacker’s methodology. Why is this crash actually a useful step for the attacker, even though it failed?
+	- On observe l'adresse ip 41414141 (la lettre 'A') dans le crash. ce qui prouve que l'attaquant a réussi à prendre le controle du pointeur d'instruction (EIP) via un débordement.
+	- Utilité : L'attaque est utile car prouve à l'attaquant que la faille est exploitable et lui permet donc de calibrer l'adresse mémoire exacte nécessaire pour ton attaque finale.
+
     2. Intent analysis. Review the bash history. The attacker compiled with -fno-stack-protector -z execstack and gave the output binary a dot-prefix name. Explain what each of these three choices reveals about the attacker’s knowledge and intent. What does the history -c at the end attend to do?
+	- Compilation : L'attaquant sait qu'il doit désactiver les protections matériels pour éxecuté du code sur la pile.
+	- Dissimulation : Le préfix "point" (.helper) sert a rendre le fichier binaire invisible lors d'un simple "ls" masquant sa présence sur le système
     3. Memory layout sketch. From the bash history you can see the payload structure: 200 bytes of NOP sled, ~23 bytes of shellcode, 4 bytes of return address. Sketch the memory layout of the overflowed buffer on paper. Label: original buffer space, saved EBP, saved EIP (overwritten with return address), NOP sled region, shellcode start. Where in memory does the return address need to point and why does the NOP sled make this easier?
+	- Structure : Le fichier contient d'abord 200 octets de NOP (la valeur \x90 qui permet de dire au processeur de skip la valeur et passer à la prochaine ligne), ces valeurs sont suivi de 23 octets de shellcode, puis l'adresse de retour.
+	- NOP sled : L'adresse de retour doit pointer n'importe où dans la zone des NOP car le "toboggan" garanti que le processeur glissera jusqu'au shellcode sans avoir besoin d'une adresse précise au bit près.
+
     4. Explain the full timeline of the attack.
+	- Chronologie : 1. Echec d'accès au root via su
+	- 2. Compilation et test de crash sur .helper
+	- 3. Succès de l'exploit pour obtenir un shell root
+	- 4. Modification de /etc/sudoers pour un accès permanent 
+	- 5. Effacement des logs
 
 ----------------------------------
 5.4 Revisit Shellcode Injection (adapted from last week)
@@ -86,6 +105,7 @@ In "example.c" you will find a simple C program that already has the code for a 
   gcc -g -fno-stack-protector -z execstack -o example example.c
   ./example
 Note that we compile to allow execution of the stack since the program we wish to execute is on the stack as the shellcode.
+	- On observe qu'on atteint bien un shell ou on peut tout faire et ça directement depuis un programme. Le but est de faire craquer des code pour pouvoir faire ça
 
 When the program runs we are dropped into a /bin/sh shell that we can operate in. We can exit this shell now we have shown that it works.
 
@@ -137,7 +157,12 @@ $
 
 
 By now you should be able to reproduced the above behaviour so you can progress with the tutorial. 
-
+- NOTE DES ETAPES : 
+- On prépare en mettant les flags qui enlève les canary, ...
+- on observe que le buffer commence à l'adresse 0xbffff250 et que l'adresse de retour (EIP) est a àxbffff29c soit une distance de 76 octets a combler
+- Sturcture du payload : On utilise un NOP sled (\x90) de 30 octets suivi du shellcode de 46 octets pour atteindre exactement la limite de 76 octets avant d'écraser l'EIP.
+- Exploit : On remplace l'EIP original par l'adresse du buffer en little endian (\x50\xf2\xff\xbf) pour forcer le processeur a foncer dans notre zone de NOP.
+- Resultat : Le programme ne crash plus et nous ouvre un shell.
 
 BONUS: Last week we also had "exploitme.c" that has potential ways to manipulate the stack due to an off by one error. See if you can inject your shellcode here. Note that this will probably require compiling with clang instead of gcc and may be tricky, this is purely a bonus if you have time, NOT a priority.
 
@@ -154,3 +179,4 @@ The "testshell.s" is a very simple shellcode to demonstrate the key concepts. No
 and many other ideas.
 
 Note that you can inject this code into any vulnerable program (if you prefer exploitme.c this is fine).
+- Voir le fichier 5_5.sh
