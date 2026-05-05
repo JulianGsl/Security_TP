@@ -1,0 +1,137 @@
+Tutorial 7 - Malware analysis - static analysis with YARA
+
+This tutorial and the following require different packages that could be installed thanks to the 
+content of installer-yara-lime-volatility.zip from Tutorial-7.zip.
+
+Unzip the installer in the Virtual Machine and run:
+
+sudo sh install_binary_analysis.sh
+
+Also note that due to lots of files and sharing between parts of the tutorial, the tutorial files have not been split up according to section.
+
+
+----------------------------------
+7.1.1 YARA basics
+----------------------------------
+
+YARA is a system to identify files according to rules. In browsers.yar you will find an example rule to detect three different web browsers.
+
+An example of how to use this rule with YARA is
+  yara browsers.yar files
+that will use this rule on all the files in the "files" directory.
+
+We can also see that YARA only reports files that match the YARA rule(s) by default:
+  yara browsers.yar bin
+  ls bin
+According to our browers.yar YARA rule none of the files in the "bin" directory are browsers.
+
+YARA has many advanced options we can use that we can see with
+  yara --help
+for example we could check that YARA has tried all of the rules and found they fail to match with
+  yara -n browsers.yar bin
+which will show that each file is checked with each of the browser rules.
+
+
+----------------------------------
+7.1.2 Simple Malware Detection
+----------------------------------
+
+In the "bin" directory you will find 16 files that are clearly named by what they are meant to be:
+  ls bin
+eight are meant to be malware, and eight are cleanware.
+
+Write a YARA rule that can detect malware_1 but not cleanware_1 (detecting other malware is fine but not required, and falsely detecting other cleanware is bad but we don't care for now).
+
+NOTE: A really simple (and broken) example of a YARA rule is left for you to start with: malware.yar
+
+
+----------------------------------
+7.1.3 Improving Detection
+----------------------------------
+
+Now your challenge is to improve your YARA rule to detect all the malware but none of the cleanware. You should do this by exploring how YARA rules work and experimenting with what you can do in the rules.
+
+One helpful command when looking for things to use in YARA rules is the "strings" command that lists all the strings in a file. For example:
+  strings bin/malware_1
+will show you all the strings in the malware_1 file . You can then also look at the strings from other files to see whether there are strings that are common in malware, or cleanware.
+
+NOTE: Using the filename (e.g. testing if the filename contains "clean" or "malware") is not an acceptable solution. The files are named this way so you can be sure, not as a way for you to solve the tutorial.
+
+HINTS: YARA allows you a lot of options for classifying files, don't just look for strings.
+
+CHEATING: The source code for all the malware and cleanware is provided in the "src" directory. This is done so that you can build the files yourself if necessary, and so you can see how some "malware" is written if you become stuck. Refer to these if you are having big problems, but try not to use them immediately.
+
+As discussed during the course, add a condition to ensure your rule only match ELF files. 
+Create .txt file containing your strings to ensure your rule work as expected.
+Then, extend your rule to only match PE files (.exe).
+
+----------------------------------
+7.1.4 Defeat Your Friends
+----------------------------------
+
+In the real world there is an ongoing attack and defence struggle between malware creators and security experts to detect malware. For the rest of this tutorial you will play this game. Pick a friend (or make two teams). One team will be the malware writers, and the other team will be the YARA rule writers.
+
+Malware writers, your goal is to write a new piece of malware or cleanware that the YARA rules from the other team label incorrectly. This can be malware they don't detect, or cleanware that does not exhibit malicious behaviour.
+
+YARA rule writers, your goal is to improve your rules each time the other team creates a new program.
+
+NOTE: Both teams can play both roles. Both teams can write programs to defeat the other team's rules, and both teams can improve their rules to label more programs accurately. You can even use the knowledge from your own programs to improve your rules (or knowledge from your rules to improve your programs).
+
+Remember when writing new rules to keep all the old programs in your test set - you don't want to let old malware through by not detecting it any more!
+
+----------------------------------
+7.2 What about windows ?
+----------------------------------
+Check the files in Q2 directory.
+
+When were these files compiled?
+
+Are there any indications that either of these files is packed or obfuscated? 
+
+If so, what are these indicators?
+
+Do any imports suggest what this malware does? If so, which imports are they?
+
+Are there any other files or host-based indicators you could look for on infected systems?
+
+What network-based indicators could be used to identify this malware on infected machines?
+
+What would be your hypothesis about the purpose of these files?
+
+Could you extract Yara rules from these files? Using YaraGen ? What are the limitations of this tool ?
+
+NOTES: we recommend using the following tools for this part of the tutorial:
+- http://www.virustotal.com/ (Note in real world analysis, you generally search with hash on virustotal and 
+                              do not upload real sample unless authorized by your company)
+- https://github.com/hasherezade/pe-bear (do not install in the VM <!>)
+- IDA/ghidra
+
+
+----------------------------------
+7.3.1 Mystery file
+----------------------------------
+
+Analyze the mystery1:
+
+    Check the file against your malware signature database. If it is not found in there, you may run it.
+
+    Is this a stripped binary?
+
+    What are the dynamically linked library it uses?
+
+    Find the secret passphrase. Use all tools at your disposal.
+
+
+----------------------------------
+7.3.2 Mystery file 2
+----------------------------------
+
+Analyze the mystery2:
+
+    Check the file against your malware signature database. If it is not found in there, you may run it.
+
+    Is this a stripped binary?
+
+    What are the dynamically linked library it uses?
+
+    Find the secret passphrase. Use all tools at your disposal.
